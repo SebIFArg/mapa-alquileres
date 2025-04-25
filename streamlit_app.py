@@ -7,9 +7,14 @@ from gspread_dataframe import get_as_dataframe
 import json
 from google.oauth2.service_account import Credentials
 
-# --- Autenticación moderna usando st.secrets ---
+# --- Autenticación segura usando st.secrets con fix de saltos ---
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-credentials_dict = json.loads(st.secrets["GOOGLE_SERVICE_ACCOUNT"])
+
+# Fix: convertir los \\n del secreto a saltos reales \n
+raw_secrets = st.secrets["GOOGLE_SERVICE_ACCOUNT"]
+credentials_dict = json.loads(raw_secrets.replace("\\n", "\n"))
+
+# Autenticación con Google
 creds = Credentials.from_service_account_info(credentials_dict, scopes=scope)
 client = gspread.authorize(creds)
 
@@ -18,15 +23,16 @@ sheet = client.open("alquileres_sebarg").sheet1
 df = get_as_dataframe(sheet).dropna(subset=["lat", "lon"])
 df["precio_num"] = df["precio"].str.replace(r"[^0-9]", "", regex=True).astype(float)
 
-# --- Filtros en sidebar ---
+# --- Filtros ---
 st.sidebar.title("Filtros")
 precio_max = st.sidebar.slider("Precio máximo", 50000, 800000, 250000, step=10000)
 cochera = st.sidebar.checkbox("Solo con cochera")
+
 df_filtrado = df[df["precio_num"] <= precio_max]
 if cochera:
     df_filtrado = df_filtrado[df_filtrado["cochera"] == True]
 
-# --- Mostrar mapa con resultados filtrados ---
+# --- Mapa ---
 st.title("Mapa de alquileres en Belgrano")
 mapa = folium.Map(location=[-34.562, -58.45], zoom_start=14)
 for _, row in df_filtrado.iterrows():
@@ -36,9 +42,13 @@ for _, row in df_filtrado.iterrows():
                          f"Cochera: {'Sí' if row['cochera'] else 'No'}<br>"
                          f"<a href='{row['url']}' target='_blank'>Ver aviso</a>",
                          max_width=300)
-    folium.CircleMarker(location=[row["lat"], row["lon"]],
-                        radius=6, color="blue",
-                        fill=True, fill_color="blue",
-                        popup=popup).add_to(mapa)
+    folium.CircleMarker(
+        location=[row["lat"], row["lon"]],
+        radius=6,
+        color="blue",
+        fill=True,
+        fill_color="blue",
+        popup=popup
+    ).add_to(mapa)
 
 st_folium(mapa, width=700, height=500)
