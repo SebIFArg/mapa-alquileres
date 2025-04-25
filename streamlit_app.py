@@ -7,9 +7,11 @@ from gspread_dataframe import get_as_dataframe
 import json
 from google.oauth2.service_account import Credentials
 
-# --- Autenticación segura desde secrets con fix real ---
+# --- Autenticación segura desde secrets ---
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-credentials_dict = json.loads(st.secrets["GOOGLE_SERVICE_ACCOUNT"].replace("\\n", "\n"))
+
+# Cargar credenciales directamente desde secrets
+credentials_dict = json.loads(st.secrets["GOOGLE_SERVICE_ACCOUNT"])
 creds = Credentials.from_service_account_info(credentials_dict, scopes=scope)
 client = gspread.authorize(creds)
 
