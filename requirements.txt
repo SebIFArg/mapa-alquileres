@@ -4,4 +4,4 @@ folium
 streamlit-folium
 gspread
 gspread_dataframe
-oauth2client
+google-auth
