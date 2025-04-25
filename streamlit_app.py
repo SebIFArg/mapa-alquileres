@@ -14,7 +14,7 @@ creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", sco
 client = gspread.authorize(creds)
 
 # --- Cargar datos ---
-sheet = client.open("Zonaprop_Belgrano")
+sheet = client.open("alquileres_sebarg").sheet1
 df = get_as_dataframe(sheet.get_worksheet(0)).dropna(subset=["lat", "lon"])
 df["precio_num"] = df["precio"].str.replace(r"[^0-9]", "", regex=True).astype(float)
 
