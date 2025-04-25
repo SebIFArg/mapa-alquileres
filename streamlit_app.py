@@ -7,14 +7,9 @@ from gspread_dataframe import get_as_dataframe
 import json
 from google.oauth2.service_account import Credentials
 
-# --- Autenticación segura usando st.secrets con fix de saltos ---
+# --- Autenticación segura desde secrets con fix real ---
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-
-# Fix: convertir los \\n del secreto a saltos reales \n
-raw_secrets = st.secrets["GOOGLE_SERVICE_ACCOUNT"]
-credentials_dict = json.loads(raw_secrets.replace("\\n", "\n"))
-
-# Autenticación con Google
+credentials_dict = json.loads(st.secrets["GOOGLE_SERVICE_ACCOUNT"].replace("\\n", "\n"))
 creds = Credentials.from_service_account_info(credentials_dict, scopes=scope)
 client = gspread.authorize(creds)
 
