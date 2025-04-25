@@ -4,14 +4,16 @@ import folium
 from streamlit_folium import st_folium
 import gspread
 from gspread_dataframe import get_as_dataframe
-from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2.service_account import Credentials
+creds = Credentials.from_service_account_info(credentials_dict, scopes=scope)
+
 
 # --- Autenticación ---
 
 import json
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 credentials_dict = json.loads(st.secrets["GOOGLE_SERVICE_ACCOUNT"])
-creds = ServiceAccountCredentials.from_json_keyfile_dict(credentials_dict, scope)
+# creds = ServiceAccountCredentials.from_json_keyfile_dict(credentials_dict, scope)
 
 client = gspread.authorize(creds)
 
