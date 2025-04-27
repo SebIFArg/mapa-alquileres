@@ -29,7 +29,9 @@ client = gspread.authorize(creds)
 # --- Cargar datos desde Google Sheets ---
 sheet = client.open("alquileres_sebarg").sheet1
 df = get_as_dataframe(sheet).dropna(subset=["lat", "lon"])
-df["precio_num"] = df["precio"].str.replace(r"[^0-9]", "", regex=True).astype(float)
+
+# --- Corregir tipo de precio antes de operar ---
+df["precio_num"] = df["precio"].astype(str).str.replace(r"[^0-9]", "", regex=True).astype(float)
 
 # --- Filtros ---
 st.sidebar.title("Filtros")
@@ -66,3 +68,4 @@ else:
         ).add_to(mapa)
 
     st_folium(mapa, width=700, height=500)
+
