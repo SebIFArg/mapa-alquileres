@@ -6,7 +6,7 @@ import gspread
 from gspread_dataframe import get_as_dataframe
 from google.oauth2.service_account import Credentials
 
-# --- Autenticación ---
+# --- Autenticación usando st.secrets corregido ---
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 
 credentials_dict = {
@@ -26,13 +26,21 @@ credentials_dict = {
 creds = Credentials.from_service_account_info(credentials_dict, scopes=scope)
 client = gspread.authorize(creds)
 
-# --- Cargar datos ---
+# --- Cargar datos desde Google Sheets ---
 sheet = client.open("alquileres_sebarg").sheet1
 df = get_as_dataframe(sheet)
 
-# --- Validar que existan columnas necesarias ---
-if "lat" in df.columns and "lon" in df.columns and "precio" in df.columns:
+# --- Debug: mostrar contenido crudo de la planilla ---
+st.subheader("📋 Debug - Contenido crudo de la planilla")
+st.dataframe(df)
+
+# --- Validar que existan las columnas necesarias ---
+columnas_requeridas = {"titulo", "precio", "superficie", "cochera", "lat", "lon", "url"}
+if columnas_requeridas.issubset(df.columns):
+    # Solo trabajamos si están todas las columnas
     df = df.dropna(subset=["lat", "lon"])
+    
+    # Convertir precio a número
     df["precio_num"] = df["precio"].astype(str).str.replace(r"[^0-9]", "", regex=True).astype(float)
 
     # --- Filtros ---
@@ -45,17 +53,17 @@ if "lat" in df.columns and "lon" in df.columns and "precio" in df.columns:
         df_filtrado = df_filtrado[df_filtrado["cochera"] == True]
 
     # --- Mostrar mapa ---
-    st.title("Mapa de alquileres en Belgrano")
+    st.title("🏡 Mapa de alquileres en Belgrano")
 
     if df_filtrado.empty:
-        st.warning("No hay resultados para los filtros aplicados.")
+        st.warning("⚠️ No hay resultados para los filtros aplicados.")
     else:
         mapa = folium.Map(location=[-34.562, -58.45], zoom_start=14)
         for _, row in df_filtrado.iterrows():
             popup = folium.Popup(
                 f"<b>{row['titulo']}</b><br>"
                 f"Precio: {row['precio']}<br>"
-                f"Superficie: {row['superficie']}<br>"
+                f"Superficie: {row['superficie']} m²<br>"
                 f"Cochera: {'Sí' if row['cochera'] else 'No'}<br>"
                 f"<a href='{row['url']}' target='_blank'>Ver aviso</a>",
                 max_width=300
@@ -70,7 +78,7 @@ if "lat" in df.columns and "lon" in df.columns and "precio" in df.columns:
             ).add_to(mapa)
 
         st_folium(mapa, width=700, height=500)
-else:
-    st.error("❌ La hoja de Google Sheets no tiene las columnas necesarias: 'lat', 'lon' y 'precio'.")
 
+else:
+    st.error("❌ ERROR: La hoja de Google Sheets no contiene todas las columnas necesarias ('titulo', 'precio', 'superficie', 'cochera', 'lat', 'lon', 'url').")
 
