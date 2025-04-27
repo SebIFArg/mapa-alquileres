@@ -6,11 +6,23 @@ import gspread
 from gspread_dataframe import get_as_dataframe
 from google.oauth2.service_account import Credentials
 
-# --- Autenticación segura desde secrets ---
+# --- Autenticación usando st.secrets corregido ---
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 
-# Cargar credenciales directamente desde secrets como diccionario
-credentials_dict = st.secrets["GOOGLE_SERVICE_ACCOUNT"]  # No necesita json.loads
+credentials_dict = {
+    "type": st.secrets.GOOGLE_SERVICE_ACCOUNT.type,
+    "project_id": st.secrets.GOOGLE_SERVICE_ACCOUNT.project_id,
+    "private_key_id": st.secrets.GOOGLE_SERVICE_ACCOUNT.private_key_id,
+    "private_key": st.secrets.GOOGLE_SERVICE_ACCOUNT.private_key.replace("\\n", "\n"),
+    "client_email": st.secrets.GOOGLE_SERVICE_ACCOUNT.client_email,
+    "client_id": st.secrets.GOOGLE_SERVICE_ACCOUNT.client_id,
+    "auth_uri": st.secrets.GOOGLE_SERVICE_ACCOUNT.auth_uri,
+    "token_uri": st.secrets.GOOGLE_SERVICE_ACCOUNT.token_uri,
+    "auth_provider_x509_cert_url": st.secrets.GOOGLE_SERVICE_ACCOUNT.auth_provider_x509_cert_url,
+    "client_x509_cert_url": st.secrets.GOOGLE_SERVICE_ACCOUNT.client_x509_cert_url,
+    "universe_domain": st.secrets.GOOGLE_SERVICE_ACCOUNT.universe_domain,
+}
+
 creds = Credentials.from_service_account_info(credentials_dict, scopes=scope)
 client = gspread.authorize(creds)
 
@@ -28,10 +40,7 @@ df_filtrado = df[df["precio_num"] <= precio_max]
 if cochera:
     df_filtrado = df_filtrado[df_filtrado["cochera"] == True]
 
-# --- Mostrar datos filtrados para depuración ---
-st.write("Datos filtrados:", df_filtrado)
-
-# --- Mapa ---
+# --- Mostrar mapa ---
 st.title("Mapa de alquileres en Belgrano")
 
 if df_filtrado.empty:
@@ -55,4 +64,5 @@ else:
             fill_color="blue",
             popup=popup
         ).add_to(mapa)
+
     st_folium(mapa, width=700, height=500)
